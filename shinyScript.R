@@ -2,8 +2,32 @@ library(shiny)
 library(ggplot2)
 
 # load files (change file location based on dataset)
-MWCN <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWCN", header = TRUE, sep = "|")
-MWOA <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", header = TRUE, sep = "|")
+MWCN <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWCN", 
+                   header = TRUE, 
+                   sep = "|",
+                   na.strings = c(" ", # changes spaces etc. to NA
+                                  "  ",
+                                  "   ",
+                                  "    ",
+                                  "            ",
+                                  "               ",
+                                  "                    ",
+                                  "0"
+                   )
+        )
+MWOA <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", 
+                   header = TRUE, 
+                   sep = "|",
+                   na.strings = c(" ", # changes spaces etc. to NA
+                                  "  ",
+                                  "   ",
+                                  "    ",
+                                  "            ",
+                                  "               ",
+                                  "                    ",
+                                  "0"
+                   )
+        )
 
 # rename work order number column (to merge datasets)
 names(MWCN)[names(MWCN) == "MWCN.WONR"] <- "woNumber"
@@ -38,10 +62,12 @@ ui <-
                                                                          '3B: Sustainment (Medium)', 
                                                                          '3C: Sustainment (Low)', 
                                                                          '4A: Enhancement (High)', 
-                                                                         '4B: Enhancement (Low)'))
+                                                                         '4B: Enhancement (Low)')),
+      sliderInput(inputId = 'daysOpenSlider', label = 'WO Days Open Cutoff', min = 0, max = 1000, value = 365), 
+      textOutput(outputId = 'meanClosed')
     ),
     mainPanel(
-      plotOutput('daysOpenVsHoursCharged')
+      plotOutput(outputId = 'daysOpenVsHoursCharged')
     )
   )
 
@@ -58,7 +84,6 @@ server <- function(input, output) {
     } else if (input$shop == 'PowerPro') {subset(Dover, Dover$MWCN.SHOPCODE == 'OX')
     } else if (input$shop == 'HVAC') {subset(Dover, Dover$MWCN.SHOPCODE == 'WW')
     } else if (input$shop == 'Sweeper') {subset(Dover, Dover$MWCN.SHOPCODE == 'EO')
-    } else if (input$shop == 'Heavy') {subset(Dover, Dover$MWCN.SHOPCODE == 'PX')
     } else if (input$shop == 'Dorms') {subset(Dover, Dover$MWCN.SHOPCODE == 'PC')
     } else if (input$shop == 'EMCS') {subset(Dover, Dover$MWCN.SHOPCODE == 'CX')
     } else if (input$shop == 'ENG') {subset(Dover, Dover$MWCN.SHOPCODE == 'PG')
@@ -74,18 +99,28 @@ server <- function(input, output) {
     } else if (input$priority == '4B: Enhancement (Low)') {subset(daysOpenVsHoursChargedData, daysOpenVsHoursChargedData$MWOA.SICODE == '4B')
     } else daysOpenVsHoursChargedData
     # create new column for days open
-    daysOpenVsHoursChargedData$daysOpen <- daysOpenVsHoursChargedData$MWOA.DATECLOS - daysOpenVsHoursChargedData$MWOA.DATEOPEN
+    daysOpenVsHoursChargedData$daysOpen <- as.numeric(daysOpenVsHoursChargedData$MWOA.DATECLOS - daysOpenVsHoursChargedData$MWOA.DATEOPEN)
     # get rid of wo open less than 0 days
     daysOpenVsHoursChargedData <- subset(daysOpenVsHoursChargedData, daysOpenVsHoursChargedData$daysOpen >= 0) 
     # get rid of wo open more than 3 years
-    daysOpenVsHoursChargedData <- subset(daysOpenVsHoursChargedData, daysOpenVsHoursChargedData$MWOA.DATECLOS - daysOpenVsHoursChargedData$MWOA.DATEOPEN <= 1095)
+    daysOpenVsHoursChargedData <- 
+      subset(daysOpenVsHoursChargedData, 
+             daysOpenVsHoursChargedData$MWOA.DATECLOS - daysOpenVsHoursChargedData$MWOA.DATEOPEN <= input$daysOpenSlider)
     # prevent errors with no data
     if(nrow(daysOpenVsHoursChargedData) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
-    } else ggplot(daysOpenVsHoursChargedData, aes(daysOpenVsHoursChargedData$daysOpen, daysOpenVsHoursChargedData$MWOA.TOTHRS)) +
+    } else ggplot(daysOpenVsHoursChargedData, aes(daysOpen, MWOA.TOTHRS)) +
       geom_point() +
       geom_smooth(method = lm) +
-      ggtitle("WO Closed per Day") +
-      labs(x = "Date", y = "WO Closed")
+      ggtitle("WO Days Open vs Hours Charged") +
+      labs(x = "Days Open", y = "Hours Charged") #+
+      #annotate("text", 
+               #x = max(daysOpenVsHoursChargedData$daysOpen), 
+               #y = max(daysOpenVsHoursChargedData$MWOA.TOTHRS), 
+               #label = "Insert correlation coefficient here", 
+               #hjust = 1)
+  })
+  output$meanClosed <- renderText({
+    mean(Dover$MWOA.TOTHRS)
   })
 }
 
