@@ -16,18 +16,6 @@ names(MWOA)[names(MWOA) == "MWOA.WONR"] <- "woNumber"
 # merge datasets
 Dover <- merge(MWCN, MWOA, by = "woNumber")
 
-# change blanks and 0s to na
-Dover[Dover == 0] = NA 
-Dover[Dover == " "] = NA
-Dover[Dover == "  "] = NA
-Dover[Dover == "   "] = NA
-Dover[Dover == "    "] = NA
-Dover[Dover == "     "] = NA
-Dover[Dover == "            "] = NA
-Dover[Dover == "               "] = NA
-Dover[Dover == "                    "] = NA
-Dover[Dover == "                              "] = NA
-
 # remove useless columns
 Dover <- subset(Dover, select = c(woNumber, 
                                   MWCN.SHOPCODE,
@@ -45,6 +33,18 @@ Dover <- subset(Dover, select = c(woNumber,
                                   MWOA.DATECLOS,
                                   MWOA.DATEPERF,
                                   MWOA.MODDATE))
+
+# change blanks and 0s to na
+Dover[Dover == 0] = NA 
+Dover[Dover == " "] = NA
+Dover[Dover == "  "] = NA
+Dover[Dover == "   "] = NA
+Dover[Dover == "    "] = NA
+Dover[Dover == "     "] = NA
+Dover[Dover == "            "] = NA
+Dover[Dover == "               "] = NA
+Dover[Dover == "                    "] = NA
+Dover[Dover == "                              "] = NA
 
 # change date columns from number to date
 Dover$MWCN.DATE.MAT <- as.Date(as.character(Dover$MWCN.DATE.MAT), "%y%m%d") 
@@ -81,6 +81,12 @@ shinyServer(function(input, output) {
     } else if (input$priority == '3C: Sustainment (Low)') {subset(Dover, MWOA.SICODE == '3C')
     } else if (input$priority == '4A: Enhancement (High)') {subset(Dover, MWOA.SICODE == '4A')
     } else if (input$priority == '4B: Enhancement (Low)') {subset(Dover, MWOA.SICODE == '4B')
+    } else Dover
+    
+    # subset woType dropdown
+    # recognizes O as 0?
+    Dover <- if(input$woType == '5-digit') {subset(Dover, substr(Dover$woNumber, 0, 1) %in% c('1','2','3','4','5','6','7','8','9'))
+    } else if (input$woType == 'DSW') {subset(Dover, substr(Dover$woNumber, 0, 1) %in% c('0','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'))
     } else Dover
     
     # create new column for wo days open
@@ -157,17 +163,10 @@ shinyServer(function(input, output) {
       data.frame(day = allDates, woCount = woCount)}
     woClosed <- countWoClosedPerDay(Dover$MWOA.DATECLOS)
 
-    woClosed <- woClosed[(woClosed$day >= as.Date("2015-07-01")
-                          & woClosed$day <= as.Date("2016-06-30")), ] # restricts dates to same size as woOpened
-    # plot(woClosed$day,
-    #      woClosed$woCount,
-    #      xlab = "Date",
-    #      ylab = "WO Closed",
-    #      xlim = as.Date(c("2015-07-01", "2016-07-01")),
-    #      ylim = c(0, 100),
-    #      main = "WO Closed per Day")
+    # restrict dates to same size as woOpened
+    woClosed <- woClosed[(woClosed$day >= as.Date("2015-07-01") & woClosed$day <= as.Date("2016-06-30")), ] 
+
     # prevent errors with no data
-    
     if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
     } else ggplot(woClosed, aes(woClosed$day,woClosed$woCount)) +
       geom_point() +
@@ -177,6 +176,10 @@ shinyServer(function(input, output) {
   })
   
   output$meanClosed <- renderText({
+    
+    # turn reactive into dataframe
+    Dover <- as.data.frame(datasetDover())
+    
     mean(Dover$MWOA.TOTHRS)
   })
 })

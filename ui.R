@@ -35,14 +35,21 @@ shinyUI(pageWithSidebar(
                                                                        '4A: Enhancement (High)',
                                                                        '4B: Enhancement (Low)')),
     
+    selectInput(inputId = 'woType', label = 'WO Type', choices = c('All',
+                                                                   '5-digit',
+                                                                   'DSW')),
+    
     sliderInput(inputId = 'daysOpenSlider', label = 'WO Days Open Cutoff', min = 0, max = 1000, value = 365), 
     
     textOutput(outputId = 'meanClosed')
   ),
   
   mainPanel(
+    
     plotOutput(outputId = 'daysOpenVsHoursCharged'),
+    
     plotOutput(outputId = 'daysOpenAfterMaterialVsHoursCharged'),
+    
     plotOutput(outputId = 'woClosedPerDay')
   )
 ))
