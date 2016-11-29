@@ -72,34 +72,40 @@ shinyServer(function(input, output) {
     } else if (input$shop == 'ENG') {subset(Dover, MWCN.SHOPCODE == 'PG')
     } else Dover
     
-    # # subset priority dropdown
-    # Dover <- if(input$priority == '1: Emergency Corrective Work') {subset(Dover, Dover$MWOA.SICODE == '1 ')
-    # } else if (input$priority == '2A: Preventive Maintenance') {subset(Dover, Dover$MWOA.SICODE == '2A')
-    # } else if (input$priority == '2B: Contingency Construction Training') {subset(Dover, Dover$MWOA.SICODE == '2B')
-    # } else if (input$priority == '3A: Sustainment (High)') {subset(Dover, Dover$MWOA.SICODE == '3A')
-    # } else if (input$priority == '3B: Sustainment (Medium)') {subset(Dover, Dover$MWOA.SICODE == '3B')
-    # } else if (input$priority == '3C: Sustainment (Low)') {subset(Dover, Dover$MWOA.SICODE == '3C')
-    # } else if (input$priority == '4A: Enhancement (High)') {subset(Dover, Dover$MWOA.SICODE == '4A')
-    # } else if (input$priority == '4B: Enhancement (Low)') {subset(Dover, Dover$MWOA.SICODE == '4B')
-    # } else Dover
+    # subset priority dropdown
+    Dover <- if(input$priority == '1: Emergency Corrective Work') {subset(Dover, MWOA.SICODE == '1 ')
+    } else if (input$priority == '2A: Preventive Maintenance') {subset(Dover, MWOA.SICODE == '2A')
+    } else if (input$priority == '2B: Contingency Construction Training') {subset(Dover, MWOA.SICODE == '2B')
+    } else if (input$priority == '3A: Sustainment (High)') {subset(Dover, MWOA.SICODE == '3A')
+    } else if (input$priority == '3B: Sustainment (Medium)') {subset(Dover, MWOA.SICODE == '3B')
+    } else if (input$priority == '3C: Sustainment (Low)') {subset(Dover, MWOA.SICODE == '3C')
+    } else if (input$priority == '4A: Enhancement (High)') {subset(Dover, MWOA.SICODE == '4A')
+    } else if (input$priority == '4B: Enhancement (Low)') {subset(Dover, MWOA.SICODE == '4B')
+    } else Dover
     
-    # create new column for days open
+    # create new column for wo days open
     Dover$daysOpen <- as.numeric(Dover$MWOA.DATECLOS - Dover$MWOA.DATEOPEN)
     
     # remove wo open less than 0 days
-    Dover <- subset(Dover, Dover$daysOpen >= 0) 
+    Dover <- subset(Dover, daysOpen > 0) 
     
-    # remove wo open more than slider input
-    Dover <- subset(Dover, Dover$MWOA.DATECLOS - Dover$MWOA.DATEOPEN <= input$daysOpenSlider)
+    # create new column for days open after material received
+    Dover$daysOpenAfterMaterial <- as.numeric(Dover$MWOA.DATECLOS - Dover$MWCN.DATE.MAT)
+    
+    # get rid of wo open less than 0 days
+    Dover <- subset(Dover, daysOpenAfterMaterial > 0)
   })
   
   output$daysOpenVsHoursCharged <- renderPlot({
     
-    # remove rows with missing data from MWOA.TOTHRS
+    # turn reactive into dataframe
     Dover <- as.data.frame(datasetDover())
+    
+    # remove rows with missing data from MWOA.TOTHRS
     Dover <- Dover[complete.cases(Dover[, 'MWOA.TOTHRS']),]
     
-    View(Dover)
+    # remove wo open more than slider input
+    Dover <- subset(Dover, MWOA.DATECLOS - MWOA.DATEOPEN <= input$daysOpenSlider)
     
     # prevent errors with no data
     if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
@@ -113,73 +119,62 @@ shinyServer(function(input, output) {
       labs(x = "Days Open", y = "Hours Charged")
   })
   
+  output$daysOpenAfterMaterialVsHoursCharged <- renderPlot({
 
-  # # need to remove finite or missing values
-  # output$daysOpenAfterMaterialVsHoursCharged <- renderPlot({
-  # 
-  #   # create new column for days open
-  #   Dover$daysOpenAfterMaterial <- as.numeric(Dover$MWOA.DATECLOS - Dover$MWCN.DATE.MAT)
-  #   
-  #   # get rid of wo open less than 0 days
-  #   Dover <- subset(Dover, Dover$daysOpenAfterMaterial >= 0) 
-  #   
-  #   # get rid of wo open more than 3 years
-  #   Dover <- subset(Dover, Dover$MWOA.DATECLOS - Dover$MWCN.DATE.MAT <= input$daysOpenSlider)
-  #   
-  #   # # remove rows with na (not working)
-  #   # Dover <- subset(Dover, !is.na(daysOpenAfterMaterial))
-  #   # Dover <- subset(Dover, !is.na(MWOA.TOTHRS))
-  #   
-  #   # prevent errors with no data
-  #   if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
-  #   } else ggplot(Dover, aes(daysOpenAfterMaterial, MWOA.TOTHRS)) +
-  #     geom_point() +
-  #     geom_smooth(method = lm) +
-  #     ggtitle("WO Days Open After Material vs Hours Charged") +
-  #     labs(x = "Days Open After Material", y = "Hours Charged") #+
-  #   # annotate("text", 
-  #   # x = max(Dover$daysOpenAfterMaterial), 
-  #   # y = max(Dover$MWOA.TOTHRS), 
-  #   # label = "Insert correlation coefficient here", 
-  #   # hjust = 1)
-  # })
-  # 
-  # output$woClosedPerDay <- renderPlot({
-  #   
-  #   # create new column for days open
-  #   Dover$daysOpenAfterMaterial <- as.numeric(Dover$MWOA.DATECLOS - Dover$MWCN.DATE.MAT)
-  # 
-  #   # get rid of wo open less than 0 days
-  #   Dover <- subset(Dover, Dover$daysOpenAfterMaterial >= 0)
-  # 
-  #   # get rid of wo open more than 3 years
-  #   Dover <- subset(Dover, Dover$MWOA.DATECLOS - Dover$MWCN.DATE.MAT <= input$daysOpenSlider)
-  # 
-  #   # count wo closed per day
-  #   countWoClosedPerDay <- function(X) {
-  #     dates <- as.Date(strftime(Dover$MWOA.DATECLOS[!is.na(Dover$MWOA.DATECLOS)], "%Y-%m-%d"))
-  #     allDates <- seq(from = min(dates), to = max(dates), by = "day")
-  #     woCount <- sapply(allDates, FUN = function(X) sum(dates == X))
-  #     data.frame(day = allDates, woCount = woCount)}
-  #   woClosed <- countWoClosedPerDay(Dover$MWOA.DATECLOS)
-  # 
-  #   woClosed <- woClosed[(woClosed$day >= as.Date("2015-07-01")
-  #                         & woClosed$day <= as.Date("2016-06-30")), ] # restricts dates to same size as woOpened
-  #   # plot(woClosed$day,
-  #   #      woClosed$woCount,
-  #   #      xlab = "Date",
-  #   #      ylab = "WO Closed",
-  #   #      xlim = as.Date(c("2015-07-01", "2016-07-01")),
-  #   #      ylim = c(0, 100),
-  #   #      main = "WO Closed per Day")
-  #   # prevent errors with no data
-  #   if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
-  #   } else ggplot(woClosed, aes(woClosed$day,woClosed$woCount)) +
-  #     geom_point() +
-  #     geom_smooth() +
-  #     ggtitle("WO Closed per Day") +
-  #     labs(x = "Date", y = "WO Closed")
-  # })
+    # turn reactive into dataframe
+    Dover <- as.data.frame(datasetDover())
+    
+    # remove rows with missing data from MWOA.TOTHRS
+    Dover <- Dover[complete.cases(Dover[, 'MWOA.TOTHRS']),]
+    
+    # remove wo open more than slider input
+    Dover <- subset(Dover, MWOA.DATECLOS - MWCN.DATE.MAT <= input$daysOpenSlider)
+
+    # prevent errors with no data
+    if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
+    } else ggplot(Dover, aes(daysOpenAfterMaterial, MWOA.TOTHRS)) +
+      geom_point() +
+      geom_smooth(method = lm) +
+      ggtitle("WO Days Open After Material vs Hours Charged") +
+      labs(x = "Days Open After Material", y = "Hours Charged") #+
+    # annotate("text",
+    # x = max(Dover$daysOpenAfterMaterial),
+    # y = max(Dover$MWOA.TOTHRS),
+    # label = "Insert correlation coefficient here",
+    # hjust = 1)
+  })
+
+  output$woClosedPerDay <- renderPlot({
+
+    # turn reactive into dataframe
+    Dover <- as.data.frame(datasetDover())
+    
+    # count wo closed per day
+    countWoClosedPerDay <- function(X) {
+      dates <- as.Date(strftime(Dover$MWOA.DATECLOS[!is.na(Dover$MWOA.DATECLOS)], "%Y-%m-%d"))
+      allDates <- seq(from = min(dates), to = max(dates), by = "day")
+      woCount <- sapply(allDates, FUN = function(X) sum(dates == X))
+      data.frame(day = allDates, woCount = woCount)}
+    woClosed <- countWoClosedPerDay(Dover$MWOA.DATECLOS)
+
+    woClosed <- woClosed[(woClosed$day >= as.Date("2015-07-01")
+                          & woClosed$day <= as.Date("2016-06-30")), ] # restricts dates to same size as woOpened
+    # plot(woClosed$day,
+    #      woClosed$woCount,
+    #      xlab = "Date",
+    #      ylab = "WO Closed",
+    #      xlim = as.Date(c("2015-07-01", "2016-07-01")),
+    #      ylim = c(0, 100),
+    #      main = "WO Closed per Day")
+    # prevent errors with no data
+    
+    if(nrow(Dover) <= 2) {ggplot(NULL, aes(0, 0)) + ggtitle('No Data')
+    } else ggplot(woClosed, aes(woClosed$day,woClosed$woCount)) +
+      geom_point() +
+      geom_smooth() +
+      ggtitle("WO Closed per Day") +
+      labs(x = "Date", y = "WO Closed")
+  })
   
   output$meanClosed <- renderText({
     mean(Dover$MWOA.TOTHRS)
