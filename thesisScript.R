@@ -53,6 +53,7 @@ count_wo_closed_per_day <- function(X) {
   woCount <- sapply(allDates, FUN = function(X) sum(dates == X))
   data.frame(day = allDates, woCount = woCount)}
 woClosed <- count_wo_closed_per_day(DoverCombined$MWOA.DATECLOS)
+
 woClosed <- woClosed[(woClosed$day >= as.Date("2015-07-01") 
                       & woClosed$day <= as.Date("2016-06-30")), ] # restricts dates to same size as woOpened
 plot(woClosed$day, 
