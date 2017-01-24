@@ -2,10 +2,10 @@ library(shiny)
 library(ggplot2)
 
 # load files (change file location based on dataset)
-MWCN <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWCN", 
+MWCN <- read.delim(file = "Dover FJXT/JMWCN", 
                    header = TRUE, 
                    sep = "|")
-MWOA <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", 
+MWOA <- read.delim(file = "Dover FJXT/JMWOA", 
                    header = TRUE, 
                    sep = "|")
 
@@ -15,18 +15,6 @@ names(MWOA)[names(MWOA) == "MWOA.WONR"] <- "woNumber"
 
 # merge datasets
 Dover <- merge(MWCN, MWOA, by = "woNumber")
-
-# change blanks and 0s to na
-Dover[Dover == 0] = NA 
-Dover[Dover == " "] = NA
-Dover[Dover == "  "] = NA
-Dover[Dover == "   "] = NA
-Dover[Dover == "    "] = NA
-Dover[Dover == "     "] = NA
-Dover[Dover == "            "] = NA
-Dover[Dover == "               "] = NA
-Dover[Dover == "                    "] = NA
-Dover[Dover == "                              "] = NA
 
 # remove useless columns
 Dover <- subset(Dover, select = c(woNumber, 
@@ -45,6 +33,18 @@ Dover <- subset(Dover, select = c(woNumber,
                                   MWOA.DATECLOS,
                                   MWOA.DATEPERF,
                                   MWOA.MODDATE))
+
+# change blanks and 0s to na
+Dover[Dover == 0] = NA 
+Dover[Dover == " "] = NA
+Dover[Dover == "  "] = NA
+Dover[Dover == "   "] = NA
+Dover[Dover == "    "] = NA
+Dover[Dover == "     "] = NA
+Dover[Dover == "            "] = NA
+Dover[Dover == "               "] = NA
+Dover[Dover == "                    "] = NA
+Dover[Dover == "                              "] = NA
 
 # change date columns from number to date
 Dover$MWCN.DATE.MAT <- as.Date(as.character(Dover$MWCN.DATE.MAT), "%y%m%d") 
