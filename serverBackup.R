@@ -1,11 +1,12 @@
+# load packages
 library(shiny)
 library(ggplot2)
 
 # load files (change file location based on dataset)
-MWCN <- read.delim(file = "Dover FJXT/JMWCN", 
+MWCN <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWCN", 
                    header = TRUE, 
                    sep = "|")
-MWOA <- read.delim(file = "Dover FJXT/JMWOA", 
+MWOA <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", 
                    header = TRUE, 
                    sep = "|")
 

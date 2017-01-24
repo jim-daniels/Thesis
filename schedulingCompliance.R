@@ -54,4 +54,4 @@ ggplot(data = schedulingCompliance, aes(x = Date, y = Count, fill = Legend)) +
   ggtitle("Scheduling Compliance")
 
 # Questions???
-# include open?
+# include open by not using date?

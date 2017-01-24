@@ -2,13 +2,16 @@ library(shiny)
 
 shinyUI(pageWithSidebar(
   
-  headerPanel('Test Data Analysis'),
+  headerPanel('Air Force Maintenance and Repair Data Analysis'),
   
   sidebarPanel(
     
-    fileInput(inputId = 'basedata', label = 'Load File: (Under Construction)', multiple = TRUE),
+    helpText('Please select the data you would like to analyze.'),
     
-    helpText('File input has the potential for each base to upload their own data for analysis'),
+    selectInput(inputId = 'base', label = 'Base:', choices = c('Dover', 
+                                                               'Dyess', 
+                                                               'Minot', 
+                                                               'Scott')),
     
     selectInput(inputId = 'shop', label = 'Shop:', choices = c('All', 
                                                                'Structures', 
@@ -53,3 +56,4 @@ shinyUI(pageWithSidebar(
     plotOutput(outputId = 'woClosedPerDay')
   )
 ))
+
