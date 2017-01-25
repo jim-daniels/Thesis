@@ -1,5 +1,4 @@
 # Questions???
-# warnings?
 
 # load packages
 library(shiny)
@@ -115,9 +114,13 @@ function(input, output) {
     } else if (input$priority == '4A: Enhancement (High)') {subset(baseData, MWOA.SICODE == '4A')
     } else if (input$priority == '4B: Enhancement (Low)') {subset(baseData, MWOA.SICODE == '4B')
     } else baseData
+    
+    # remove dates outside slider input
+    baseData <- subset(baseData, MWCN.DATECLOS <= max(input$dateRange))
+    baseData <- subset(baseData, MWCN.DATECLOS >= min(input$dateRange))
   })
   
-  output$testPlot <- renderPlot({
+  output$manpowerOutput <- renderPlot({
     
     # turn reactive into dataframe
     baseData <- as.data.frame(baseReactive())
@@ -156,7 +159,154 @@ function(input, output) {
       geom_bar(stat = "identity", position = position_dodge(), colour = "black") +
       ggtitle("Manpower Output")  })
   
-  output$testTable <- DT::renderDataTable({
-    DT::dataTable(baseData, options = list(pageLength = 25))
+  output$priorityImpact <- renderPlot({
+
+    # turn reactive into dataframe
+    baseData <- as.data.frame(baseReactive())
+    
+    # remove useless columns
+    baseData <- subset(baseData, select = c(MWOA.SICODE,
+                                            MWCN.MIL.HRS,
+                                            MWCN.CIV.HRS))
+    
+    # remove unnecessary rows (many are entered incorrectly) (Scott entered emergency as 1A not 1...)
+    baseData <- baseData[which(baseData$MWOA.SICODE %in% c("1 ", "1A", "2A", "2B", "3A", "3B", "3C", "4A", "4B", "  ")),]
+    
+    # count WO in each priority
+    count <- table(baseData$MWOA.SICODE)
+    
+    # sum mil hours charged for each priority
+    hrMil <- aggregate(baseData$MWCN.MIL.HRS, by = list(Var1 = baseData$MWOA.SICODE), FUN = sum)
+    
+    # sum civ hours charged for each priority
+    hrCiv <- aggregate(baseData$MWCN.CIV.HRS, by = list(Var1 = baseData$MWOA.SICODE), FUN = sum)
+    
+    # merge datasets
+    priorityImpact <- merge(count, hrMil, by = "Var1")
+    priorityImpact <- merge(priorityImpact, hrCiv, by = "Var1")
+    
+    # rename columns
+    names(priorityImpact)[names(priorityImpact) == "Var1"] <- "Priority"
+    names(priorityImpact)[names(priorityImpact) == "Freq"] <- "WO_Count"
+    names(priorityImpact)[names(priorityImpact) == "x.x"] <- "Mil_Hours"
+    names(priorityImpact)[names(priorityImpact) == "x.y"] <- "Civ_Hours"
+    
+    # convert to long format for plotting
+    priorityImpact <- gather(priorityImpact, Legend, Count, WO_Count:Civ_Hours, factor_key=TRUE)
+    
+    # plot data
+    ggplot(data = priorityImpact, aes(x = Priority, y = Count, fill = Legend)) +
+      geom_bar(stat = "identity", position = position_dodge(), colour = "black") +
+      ggtitle("Priority Impact")
+    
+  })
+  
+  output$facilityImpact <- renderPlot({
+    
+    # turn reactive into dataframe
+    baseData <- as.data.frame(baseReactive())
+    
+    # count WO each facility
+    count <- table(baseData$MWOA.FACIDNR)
+    count <- as.data.frame(count)
+    
+    # sum mil hours charged for each facility
+    hrMil <- aggregate(baseData$MWCN.MIL.HRS, by = list(Var1 = baseData$MWOA.FACIDNR), FUN = sum)
+    
+    # sum civ hours charged for each facility
+    hrCiv <- aggregate(baseData$MWCN.CIV.HRS, by = list(Var1 = baseData$MWOA.FACIDNR), FUN = sum)
+    
+    # merge datasets
+    facilityImpact <- merge(count, hrMil, by = "Var1")
+    facilityImpact <- merge(facilityImpact, hrCiv, by = "Var1")
+    
+    # rename columns
+    names(facilityImpact)[names(facilityImpact) == "Var1"] <- "Facility"
+    names(facilityImpact)[names(facilityImpact) == "Freq"] <- "WO_Count"
+    names(facilityImpact)[names(facilityImpact) == "x.x"] <- "Mil_Hours"
+    names(facilityImpact)[names(facilityImpact) == "x.y"] <- "Civ_Hours"
+    
+    # reorder size
+    facilityImpact <- facilityImpact[with(facilityImpact, order(-WO_Count)), ]
+    
+    # remove all but highest count facilities
+    facilityImpact <- facilityImpact[1:10, ]
+    
+    # convert to long format for plotting
+    facilityImpact <- gather(facilityImpact, Legend, Count, WO_Count:Civ_Hours, factor_key=TRUE)
+    
+    # plot data
+    ggplot(data = facilityImpact, aes(x = Facility, y = Count, fill = Legend)) +
+      geom_bar(stat = "identity", position = position_dodge(), colour = "black") +
+      ggtitle("Facility Impact")
+  })
+  
+  output$schedulingCompliance <- renderPlot({
+    
+    # turn reactive into dataframe
+    baseData <- as.data.frame(baseReactive())
+    
+    # remove useless columns
+    baseData <- subset(baseData, select = c(MWCN.EST.HRS,
+                                            MWCN.MIL.HRS,
+                                            MWCN.CIV.HRS,
+                                            MWCN.DATECLOS))
+    
+    # add column for just month
+    baseData$month <- baseData$MWCN.DATECLOS
+    baseData$month <- format(baseData$month, "%y-%m")
+    
+    # count WO close each day
+    count <- table(baseData$month)
+    count <- as.data.frame(count)
+    
+    # sum est hours charged for each day
+    hrEst <- aggregate(baseData$MWCN.EST.HRS, by = list(Var1 = baseData$month), FUN = sum)
+    
+    # sum mil hours charged for each day
+    hrMil <- aggregate(baseData$MWCN.MIL.HRS, by = list(Var1 = baseData$month), FUN = sum)
+    
+    # sum civ hours charged for each day
+    hrCiv <- aggregate(baseData$MWCN.CIV.HRS, by = list(Var1 = baseData$month), FUN = sum)
+    
+    # merge datasets
+    schedulingCompliance <- merge(count, hrEst, by = "Var1")
+    schedulingCompliance <- merge(schedulingCompliance, hrMil, by = "Var1")
+    schedulingCompliance <- merge(schedulingCompliance, hrCiv, by = "Var1")
+    
+    # rename columns
+    names(schedulingCompliance)[names(schedulingCompliance) == "Var1"] <- "Date"
+    names(schedulingCompliance)[names(schedulingCompliance) == "Freq"] <- "WO_Closed"
+    names(schedulingCompliance)[names(schedulingCompliance) == "x.x"] <- "Est_Hours"
+    names(schedulingCompliance)[names(schedulingCompliance) == "x.y"] <- "Mil_Hours"
+    names(schedulingCompliance)[names(schedulingCompliance) == "x"] <- "Civ_Hours"
+    
+    # convert to long format for plotting
+    schedulingCompliance <- gather(schedulingCompliance, Legend, Count, WO_Closed:Civ_Hours, factor_key=TRUE)
+    
+    # plot data
+    ggplot(data = schedulingCompliance, aes(x = Date, y = Count, fill = Legend)) +
+      geom_bar(stat = "identity", position = position_dodge(), colour = "black") +
+      ggtitle("Scheduling Compliance")
+    
+  })
+  
+  output$dataTable <- renderDataTable({
+    
+    # turn reactive into dataframe
+    baseData <- as.data.frame(baseReactive())
+    
+    # rename columns
+    names(baseData)[names(baseData) == "MWOA.WOTITLE"] <- "Title"
+    names(baseData)[names(baseData) == "MWOA.FACIDNR"] <- "Fac_Number"
+    names(baseData)[names(baseData) == "MWCN.SHOPCODE"] <- "Shop"
+    names(baseData)[names(baseData) == "MWOA.SICODE"] <- "Priority"
+    names(baseData)[names(baseData) == "MWCN.EST.HRS"] <- "Est_Hrs"
+    names(baseData)[names(baseData) == "MWCN.MIL.HRS"] <- "Mil_Hrs"
+    names(baseData)[names(baseData) == "MWCN.CIV.HRS"] <- "Civ_Hrs"
+    names(baseData)[names(baseData) == "MWCN.DATECLOS"] <- "Date_Closed"
+    
+    baseData
+    
   })
 }

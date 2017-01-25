@@ -2,7 +2,7 @@
 library(ggplot2)
 
 # load files (change file location based on dataset)
-baseData <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", 
+baseData <- read.delim(file = "Data/Dover/MWOA", 
                     header = TRUE, 
                     sep = "|")
 

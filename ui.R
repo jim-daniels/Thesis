@@ -32,12 +32,18 @@ pageWithSidebar(
                                                                            '3B: Sustainment (Medium)',
                                                                            '3C: Sustainment (Low)',
                                                                            '4A: Enhancement (High)',
-                                                                           '4B: Enhancement (Low)'))
+                                                                           '4B: Enhancement (Low)')),
+        sliderInput("dateRange", "Date WO Closed Range:", min = as.Date("2015-07-01"), 
+                    max = as.Date("2016-07-01"), 
+                    value = c(as.Date("2015-07-01"), as.Date("2016-07-01")))
     ),
     mainPanel(
-        tabsetPanel(id = 'testTable', 
-            tabPanel('Test Plot', plotOutput(outputId = 'testPlot')),
-            tabPanel('Data Table', DT::dataTableOutput('dataTable'))
+        tabsetPanel(id = NULL, 
+            tabPanel('Manpower Output', plotOutput(outputId = 'manpowerOutput')),
+            tabPanel('Priority Impact', plotOutput(outputId = 'priorityImpact')),
+            tabPanel('Facility Impact', plotOutput(outputId = 'facilityImpact')),
+            tabPanel('Scheduling Compliance', plotOutput(outputId = 'schedulingCompliance')),
+            tabPanel('Data Table', dataTableOutput(outputId = 'dataTable'))
         )
     )
 )

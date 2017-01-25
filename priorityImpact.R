@@ -2,7 +2,7 @@
 library(ggplot2)
 
 # load files (change file location based on dataset)
-baseData <- read.delim(file = "C:/Users/jimda/OneDrive/Documents/R/Thesis/Data/Dover FJXT/JMWOA", 
+baseData <- read.delim(file = "Data/Dover/MWOA", 
                     header = TRUE, 
                     sep = "|")
 
@@ -11,15 +11,17 @@ baseData <- subset(baseData, select = c(MWOA.SICODE,
                                         MWOA.MILHRS,
                                         MWOA.CIVHRS))
 
-# remove inaccurate rows (couldn't figure out another way to only show correct inputs)
-baseData[baseData == "1A"] = NA
-baseData[baseData == "2 "] = NA
-baseData[baseData == "3Z"] = NA
-baseData[baseData == "4 "] = NA
-baseData[baseData == "EC"] = NA
-baseData[baseData == "MD"] = NA
-baseData[baseData == "X "] = NA
-na.omit(baseData)
+baseData <- baseData[which(baseData$MWOA.SICODE %in% c("1 ", "2A", "2B", "3A", "3B", "3C", "4A", "4B", "  ")),]
+
+# # remove inaccurate rows (couldn't figure out another way to only show correct inputs)
+# baseData[baseData == "1A"] = NA
+# baseData[baseData == "2 "] = NA
+# baseData[baseData == "3Z"] = NA
+# baseData[baseData == "4 "] = NA
+# baseData[baseData == "EC"] = NA
+# baseData[baseData == "MD"] = NA
+# baseData[baseData == "X "] = NA
+# na.omit(baseData)
 
 # count WO in each priority
 count <- table(baseData$MWOA.SICODE)
