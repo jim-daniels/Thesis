@@ -24,9 +24,11 @@ doverData <- subset(doverData, select = c(WO_Number,
                                         MWCN.EST.HRS,
                                         MWCN.MIL.HRS,
                                         MWCN.CIV.HRS,
+                                        MWOA.DATEOPEN,
                                         MWCN.DATECLOS))
 # change date columns from number to date
 doverData$MWCN.DATECLOS <- as.Date(as.character(doverData$MWCN.DATECLOS), "%y%m%d")
+doverData$MWOA.DATEOPEN <- as.Date(as.character(doverData$MWOA.DATEOPEN), "%y%m%d")
 
 # repeat for Dyess
 MWCN <- read.delim(file = "Data/Dyess/MWCN", header = TRUE, sep = "|", quote = "", skipNul = TRUE)
@@ -42,8 +44,10 @@ dyessData <- subset(dyessData, select = c(WO_Number,
                                         MWCN.EST.HRS,
                                         MWCN.MIL.HRS,
                                         MWCN.CIV.HRS,
+                                        MWOA.DATEOPEN,
                                         MWCN.DATECLOS))
 dyessData$MWCN.DATECLOS <- as.Date(as.character(dyessData$MWCN.DATECLOS), "%y%m%d")
+dyessData$MWOA.DATEOPEN <- as.Date(as.character(dyessData$MWOA.DATEOPEN), "%y%m%d")
 
 # repeat for Minot
 MWCN <- read.delim(file = "Data/Minot/MWCN", header = TRUE, sep = "|", quote = "", skipNul = TRUE)
@@ -59,8 +63,10 @@ minotData <- subset(minotData, select = c(WO_Number,
                                          MWCN.EST.HRS,
                                          MWCN.MIL.HRS,
                                          MWCN.CIV.HRS,
+                                         MWOA.DATEOPEN,
                                          MWCN.DATECLOS))
 minotData$MWCN.DATECLOS <- as.Date(as.character(minotData$MWCN.DATECLOS), "%y%m%d")
+minotData$MWOA.DATEOPEN <- as.Date(as.character(minotData$MWOA.DATEOPEN), "%y%m%d")
 
 # repeat for Scott
 MWCN <- read.delim(file = "Data/Scott/MWCN", header = TRUE, sep = "|", quote = "", skipNul = TRUE)
@@ -76,8 +82,10 @@ scottData <- subset(scottData, select = c(WO_Number,
                                          MWCN.EST.HRS,
                                          MWCN.MIL.HRS,
                                          MWCN.CIV.HRS,
+                                         MWOA.DATEOPEN,
                                          MWCN.DATECLOS))
 scottData$MWCN.DATECLOS <- as.Date(as.character(scottData$MWCN.DATECLOS), "%y%m%d")
+scottData$MWOA.DATEOPEN <- as.Date(as.character(scottData$MWOA.DATEOPEN), "%y%m%d")
 
 function(input, output) {
   
@@ -118,6 +126,12 @@ function(input, output) {
     # remove dates outside slider input
     baseData <- subset(baseData, MWCN.DATECLOS <= max(input$dateRange))
     baseData <- subset(baseData, MWCN.DATECLOS >= min(input$dateRange))
+    
+    # remove WO open longer than slider input
+    baseData$Days_Open <- as.numeric(baseData$MWCN.DATECLOS - baseData$MWOA.DATEOPEN)
+    baseData <- subset(baseData, Days_Open <= max(input$openRange))
+    baseData <- subset(baseData, Days_Open >= min(input$openRange))
+    
   })
   
   output$manpowerOutput <- renderPlot({
@@ -304,6 +318,7 @@ function(input, output) {
     names(baseData)[names(baseData) == "MWCN.EST.HRS"] <- "Est_Hrs"
     names(baseData)[names(baseData) == "MWCN.MIL.HRS"] <- "Mil_Hrs"
     names(baseData)[names(baseData) == "MWCN.CIV.HRS"] <- "Civ_Hrs"
+    names(baseData)[names(baseData) == "MWOA.DATEOPEN"] <- "Date_Open"
     names(baseData)[names(baseData) == "MWCN.DATECLOS"] <- "Date_Closed"
     
     baseData

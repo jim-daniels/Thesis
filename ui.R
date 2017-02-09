@@ -35,7 +35,10 @@ pageWithSidebar(
                                                                            '4B: Enhancement (Low)')),
         sliderInput("dateRange", "Date WO Closed Range:", min = as.Date("2015-07-01"), 
                     max = as.Date("2016-07-01"), 
-                    value = c(as.Date("2015-07-01"), as.Date("2016-07-01")))
+                    value = c(as.Date("2015-07-01"), as.Date("2016-07-01"))),
+        sliderInput("openRange", "Number of Days WO Open:", min = 0, 
+                    max = 1825, 
+                    value = c(0, 365))
     ),
     mainPanel(
         tabsetPanel(id = NULL, 
